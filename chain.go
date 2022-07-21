@@ -1,9 +1,25 @@
+// Package chain provides a injecting way to call a group of functions orderly.
 package chain
 
 import (
 	"fmt"
 	"reflect"
 )
+
+// C creates a new function as the type of Func, which calls given functions fn orderly.
+// Each fn will be called with inputs of Func or returns from previous fn, picking with the right type.
+// Returns of Func are picking from inputs of Func and all returns of fn.
+func C[Func any](fn ...any) Func {
+	var f *Func
+	tfunc := reflect.TypeOf(f).Elem()
+
+	chain := newChain(tfunc, fn)
+	chain.Check()
+
+	ret := reflect.MakeFunc(tfunc, chain.Call)
+
+	return ret.Interface().(Func)
+}
 
 type chain struct {
 	inputs  []reflect.Type
@@ -91,16 +107,4 @@ func (c *chain) Call(args []reflect.Value) []reflect.Value {
 	}
 
 	return output
-}
-
-func C[Func any](arg ...any) Func {
-	var f *Func
-	tfunc := reflect.TypeOf(f).Elem()
-
-	chain := newChain(tfunc, arg)
-	chain.Check()
-
-	ret := reflect.MakeFunc(tfunc, chain.Call)
-
-	return ret.Interface().(Func)
 }
