@@ -37,7 +37,7 @@ func Return[T any] (w http.ResponseWriter, arg T, err error) {
 
 func Server() {
   http.HandleFunc("/", chain.C[func(w http.ResponseWriter, r *http.Request)](
-    RequestContext, Auth, GetBody[int], Handler, Return[string]
+     chain.Defer(Return[string]), RequestContext, Auth, GetBody[int], Handler,
   ))
 }
 ```
@@ -46,9 +46,14 @@ The function generating by `chain.C()` is similar to:
 
 ```go
 func (w http.ResponseWriter, r *http.Request) {
+  var s string
+  var err error
+
+  defer Return[string](w, s, err)
+
   ctx := RequestContext(r)
 
-  err := Auth(ctx, r)
+  err = Auth(ctx, r)
 
   var i int
   if err == nil {
@@ -59,7 +64,5 @@ func (w http.ResponseWriter, r *http.Request) {
   if err == nil {
     s, err = Handler(ctx, i)
   }
-
-  Return[string](w, s, err)
 }
 ```
