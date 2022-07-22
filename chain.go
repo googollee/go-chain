@@ -62,8 +62,14 @@ func (c *chain) Check() {
 
 	for _, fn := range c.funcs {
 		ft := fn.Type()
+
+		if ft == deferType {
+			ft = fn.Interface().(DeferFunc).value.Type()
+		}
+
 		for i := 0; i < ft.NumIn(); i++ {
 			in := ft.In(i)
+
 			if !providers[in] {
 				panic(fmt.Sprintf("chain.C can't provide any instance of type %s for function %s as input", in, ft))
 			}
@@ -83,6 +89,7 @@ func (c *chain) Check() {
 }
 
 func (c *chain) Call(args []reflect.Value) []reflect.Value {
+	var deferFuncs []reflect.Value
 	providers := make(map[reflect.Type]reflect.Value)
 
 	for _, arg := range args {
@@ -91,6 +98,11 @@ func (c *chain) Call(args []reflect.Value) []reflect.Value {
 
 	for _, fn := range c.funcs {
 		ft := fn.Type()
+
+		if ft == deferType {
+			deferFuncs = append(deferFuncs, fn.Interface().(DeferFunc).value)
+			continue
+		}
 
 		input := make([]reflect.Value, ft.NumIn())
 		for i := range input {
@@ -107,6 +119,20 @@ func (c *chain) Call(args []reflect.Value) []reflect.Value {
 			if !errValue.IsNil() {
 				break
 			}
+		}
+	}
+
+	for _, fn := range deferFuncs {
+		ft := fn.Type()
+
+		input := make([]reflect.Value, ft.NumIn())
+		for i := range input {
+			input[i] = providers[ft.In(i)]
+		}
+
+		output := fn.Call(input)
+		for _, out := range output {
+			providers[out.Type()] = out
 		}
 	}
 

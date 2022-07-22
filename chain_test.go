@@ -3,6 +3,7 @@ package chain
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"testing"
 )
 
@@ -67,6 +68,60 @@ func TestCError(t *testing.T) {
 
 			if want, got := test.wantCalled, followCalled; want != got {
 				t.Errorf("follow func calls, want: %v, got: %v", want, got)
+			}
+		})
+	}
+}
+
+func TestCDefer(t *testing.T) {
+	var gotErr error
+	var gotCode int
+
+	init := func() (int, error) {
+		return 0, nil
+	}
+
+	errHandler := func(code int, err error) {
+		if err != nil {
+			gotErr = err
+			return
+		}
+
+		gotCode = code
+	}
+
+	atoi := func(s string) (int, error) {
+		ret, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		return int(ret), nil
+	}
+
+	f := C[func(string)](init, Defer(errHandler), atoi)
+
+	tests := []struct {
+		input    string
+		wantCode int
+		wantErr  bool
+	}{
+		{"10", 10, false},
+	}
+
+	for _, test := range tests {
+		name := fmt.Sprintf("C(Defer(errHandler), atoi)(%q)", test.input)
+		t.Run(name, func(t *testing.T) {
+			gotCode = 0
+			gotErr = nil
+
+			f(test.input)
+
+			if test.wantErr != (gotErr != nil) {
+				t.Errorf("want error: %v, got error: %v", test.wantErr, gotErr)
+			}
+
+			if want, got := test.wantCode, gotCode; want != got {
+				t.Errorf("code, want: %v, got: %v", want, got)
 			}
 		})
 	}
