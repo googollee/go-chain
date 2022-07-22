@@ -64,7 +64,7 @@ func (c *chain) Check() {
 		ft := fn.Type()
 
 		if ft == deferType {
-			ft = fn.Interface().(DeferFunc).value.Type()
+			ft = fn.Interface().(deferFunc).value.Type()
 		}
 
 		for i := 0; i < ft.NumIn(); i++ {
@@ -100,7 +100,7 @@ func (c *chain) Call(args []reflect.Value) []reflect.Value {
 		ft := fn.Type()
 
 		if ft == deferType {
-			deferFuncs = append(deferFuncs, fn.Interface().(DeferFunc).value)
+			deferFuncs = append(deferFuncs, fn.Interface().(deferFunc).value)
 			continue
 		}
 
@@ -122,7 +122,8 @@ func (c *chain) Call(args []reflect.Value) []reflect.Value {
 		}
 	}
 
-	for _, fn := range deferFuncs {
+	for i := len(deferFuncs) - 1; i >= 0; i-- {
+		fn := deferFuncs[i]
 		ft := fn.Type()
 
 		input := make([]reflect.Value, ft.NumIn())

@@ -9,6 +9,11 @@ go-chain is a dependency injection to create a function to call a group of funct
 ## Middleware for HTTP endpoints
 
 ```go
+
+func InitVars() (string, error) {
+  return "", nil
+}
+
 func RequestContext(r *http.Request) context.Context {
   return r.Context()
 }
@@ -37,7 +42,7 @@ func Return[T any] (w http.ResponseWriter, arg T, err error) {
 
 func Server() {
   http.HandleFunc("/", chain.C[func(w http.ResponseWriter, r *http.Request)](
-     chain.Defer(Return[string]), RequestContext, Auth, GetBody[int], Handler,
+     InitVars, chain.Defer(Return[string]), RequestContext, Auth, GetBody[int], Handler,
   ))
 }
 ```
@@ -46,8 +51,10 @@ The function generating by `chain.C()` is similar to:
 
 ```go
 func (w http.ResponseWriter, r *http.Request) {
-  var s string
-  var err error
+  s, err := InitVars()
+  if err != nil {
+    return
+  }
 
   defer Return[string](w, s, err)
 
