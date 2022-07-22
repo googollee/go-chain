@@ -1,6 +1,10 @@
 package chain
 
-import "testing"
+import (
+	"errors"
+	"fmt"
+	"testing"
+)
 
 func TestC(t *testing.T) {
 	type MyString string
@@ -23,5 +27,47 @@ func TestC(t *testing.T) {
 
 	if got1 != "str" || got2 != 1 {
 		t.Errorf("want: str, 1, got: %v, %v", got1, got2)
+	}
+}
+
+func TestCError(t *testing.T) {
+	wantErr := errors.New("error")
+	errFunc := func(i int) error {
+		if i < 10 {
+			return wantErr
+		}
+		return nil
+	}
+
+	followCalled := false
+	followFunc := func() {
+		followCalled = true
+	}
+
+	f := C[func(int) error](errFunc, followFunc)
+
+	tests := []struct {
+		input      int
+		wantErr    error
+		wantCalled bool
+	}{
+		{0, wantErr, false},
+		{100, nil, true},
+	}
+
+	for _, test := range tests {
+		name := fmt.Sprintf("C(errFunc, followFunc)(%d)", test.input)
+		t.Run(name, func(t *testing.T) {
+			followCalled = false
+			gotErr := f(test.input)
+
+			if want, got := test.wantErr, gotErr; want != got {
+				t.Errorf("return error, want: %v, got: %v", want, got)
+			}
+
+			if want, got := test.wantCalled, followCalled; want != got {
+				t.Errorf("follow func calls, want: %v, got: %v", want, got)
+			}
+		})
 	}
 }

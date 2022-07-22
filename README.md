@@ -37,7 +37,7 @@ func Return[T any] (w http.ResponseWriter, arg T, err error) {
 
 func Server() {
   http.HandleFunc("/", chain.C[func(w http.ResponseWriter, r *http.Request)](
-     chain.Defer(Return[string]), RequestContext, Auth, GetBody[int], Handler,
+     chain.Defer(chain.CacheError(Return[string])), RequestContext, Auth, GetBody[int], Handler,
   ))
 }
 ```
@@ -54,15 +54,20 @@ func (w http.ResponseWriter, r *http.Request) {
   ctx := RequestContext(r)
 
   err = Auth(ctx, r)
+  if err != nil {
+    return
+  }
 
   var i int
-  if err == nil {
-    i, err = GetBody[int](r)
+  i, err = GetBody[int](r)
+  if err != nil {
+    return
   }
 
   var s string
-  if err == nil {
-    s, err = Handler(ctx, i)
+  s, err = Handler(ctx, i)
+  if err != nil {
+    return
   }
 }
 ```

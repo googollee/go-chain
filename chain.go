@@ -21,6 +21,8 @@ func C[Func any](fn ...any) Func {
 	return ret.Interface().(Func)
 }
 
+var errorType = reflect.TypeOf((*error)(nil)).Elem()
+
 type chain struct {
 	inputs  []reflect.Type
 	outputs []reflect.Type
@@ -98,6 +100,13 @@ func (c *chain) Call(args []reflect.Value) []reflect.Value {
 		output := fn.Call(input)
 		for _, out := range output {
 			providers[out.Type()] = out
+		}
+
+		if l := len(output); l > 0 && output[l-1].Type() == errorType {
+			errValue := output[l-1]
+			if !errValue.IsNil() {
+				break
+			}
 		}
 	}
 
