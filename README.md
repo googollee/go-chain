@@ -37,7 +37,7 @@ func Return[T any] (w http.ResponseWriter, arg T, err error) {
 
 func Server() {
   http.HandleFunc("/", chain.C[func(w http.ResponseWriter, r *http.Request)](
-     chain.Defer(chain.CacheError(Return[string])), RequestContext, Auth, GetBody[int], Handler,
+     chain.Defer(Return[string]), RequestContext, Auth, GetBody[int], Handler,
   ))
 }
 ```
