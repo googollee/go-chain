@@ -9,7 +9,6 @@ go-chain is a dependency injection to create a function to call a group of funct
 ## Middleware for HTTP endpoints
 
 ```go
-
 func InitVars() (string, error) {
   return "", nil
 }
@@ -77,4 +76,18 @@ func (w http.ResponseWriter, r *http.Request) {
     return
   }
 }
+```
+
+# Bench
+
+```
+$ go test --test.bench .
+goos: linux
+goarch: amd64
+pkg: github.com/googollee/go-chain
+cpu: Intel(R) Xeon(R) W-2135 CPU @ 3.70GHz
+BenchmarkC-12              70035             15660 ns/op
+BenchmarkFunc-12          152092              7110 ns/op
+PASS
+ok      github.com/googollee/go-chain   2.474s
 ```
